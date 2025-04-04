@@ -1,39 +1,97 @@
 <?php
-// Load questions from JSON file
-$questionsFile = 'questions.json';
-$selectedQuestionsFile = 'selected-questions.json';
-$questions = json_decode(file_get_contents($questionsFile), true);
-$selectedQuestions = file_exists($selectedQuestionsFile) ? json_decode(file_get_contents($selectedQuestionsFile), true) : [];
+session_start();
 
-// Get category from request
-$category = $_GET['category'] ?? 'all';
-$showCorrectOnly = isset($_GET['show_correct']);
+// Load data
+$questionsData = json_decode(file_get_contents('questions.json'), true);
+$selectedIds = json_decode(file_get_contents('selected-questions.json'), true);
 
-// Filter questions by category
-$filteredQuestions = array_filter($questions, function ($q) use ($category, $selectedQuestions) {
-    return $category === 'all' || (isset($q['categories'][0]) && $q['categories'][0] === $category) || ($category === 'slct' && in_array($q['question_number'], $selectedQuestions));
-});
+// Normalize selected IDs as strings for comparison
+$selectedIds = array_map('strval', $selectedIds);
 
-// Convert filtered questions to array
-$filteredQuestions = array_values($filteredQuestions);
+// Filter questions to only those in selected-questions.json
+$selectedQuestions = array_values(array_filter($questionsData, function($q) use ($selectedIds) {
+    return in_array($q['question_number'], $selectedIds);
+}));
 
-// Get current question index
-$index = isset($_GET['index']) ? (int)$_GET['index'] : 0;
-if ($index < 0) $index = 0;
-if ($index >= count($filteredQuestions)) $index = count($filteredQuestions) - 1;
+$totalQuestions = count($selectedQuestions);
 
-$question = $filteredQuestions[$index] ?? null;
+// Get current index from query string
+$currentIndex = isset($_GET['q']) ? intval($_GET['q']) : 0;
+$currentIndex = max(0, min($currentIndex, $totalQuestions - 1));
 
-if ($question) {
-    echo json_encode([
-        'question_number' => $question['question_number'],
-        'question' => $question['question'],
-        'image' => str_replace('\\', '/', $question['image']),
-        'options' => array_map(function ($option) use ($showCorrectOnly) {
-            return $showCorrectOnly && !$option['correct'] ? null : $option;
-        }, $question['options'])
-    ]);
-} else {
-    echo json_encode(['error' => 'No questions available.']);
+// Toggle correct answer view
+if (isset($_GET['toggle'])) {
+    $_SESSION['only_correct'] = !isset($_SESSION['only_correct']) || !$_SESSION['only_correct'];
 }
+$onlyCorrect = isset($_SESSION['only_correct']) && $_SESSION['only_correct'];
+
+// Get current question
+$currentQuestion = $selectedQuestions[$currentIndex];
+
+// Normalize image path
+$imagePath = str_replace("\\", "/", $currentQuestion['image']);
+if (!file_exists($imagePath)) {
+    $imagePath = "images/default.png";
+}
+
+// Filter answers
+$options = $currentQuestion['options'];
+if ($onlyCorrect) {
+    $options = array_filter($options, fn($opt) => $opt['correct']);
+}
+
+// Category (optional)
+$category = isset($currentQuestion['categories'][0]) ? $currentQuestion['categories'][0] : "Unbekannte Kategorie";
 ?>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <title>Quiz</title>
+</head>
+<body>
+    <div class="progress-bar">
+        <span id="progress-text"><?= ($currentIndex + 1) ?> / <?= $totalQuestions ?> Fragen, Kategorie: <?= htmlspecialchars($category) ?></span>
+    </div>
+
+    <div class="container">
+        <div class="image-section">
+            <img id="question-image" src="<?= htmlspecialchars($imagePath) ?>" alt="Frage Bild">
+        </div>
+
+        <div class="question-section">
+            <h2 id="question-number">Frage <?= htmlspecialchars($currentQuestion['question_number']) ?></h2>
+            <p id="question-text"><?= htmlspecialchars($currentQuestion['question']) ?></p>
+        </div>
+    </div>
+
+    <div class="answers-section">
+        <div id="answers">
+            <?php foreach ($options as $opt): ?>
+                <div class="answer<?= $opt['correct'] ? ' correct' : '' ?>">
+                    <?= htmlspecialchars($opt['text']) ?>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+
+    <div class="navigation">
+        <?php if ($currentIndex > 0): ?>
+            <a href="?q=<?= $currentIndex - 1 ?>"><button id="prev">Zurück</button></a>
+        <?php endif; ?>
+        <?php if ($currentIndex < $totalQuestions - 1): ?>
+            <a href="?q=<?= $currentIndex + 1 ?>"><button id="next">Weiter</button></a>
+        <?php endif; ?>
+    </div>
+
+    <div class="navigation">
+        <a href="?q=<?= $currentIndex ?>&toggle=1">
+            <button id="toggle-correct">
+                <?= $onlyCorrect ? "Alle Antworten anzeigen" : "Nur richtige Antworten anzeigen" ?>
+            </button>
+        </a>
+    </div>
+</body>
+</html>
