@@ -1,67 +1,82 @@
-document.addEventListener("DOMContentLoaded", function () {
-    let currentIndex = 0;
-    let category = "all";
-    let showCorrectOnly = false;
+let allQuestions = [];
+let selectedQuestions = [];
+let currentIndex = 0;
+let onlyCorrect = false;
 
-    const questionText = document.getElementById("question-text");
-    const questionImage = document.getElementById("question-image");
-    const optionsContainer = document.getElementById("options-container");
-    const categoryDropdown = document.getElementById("category-filter");
-    const toggleCorrectBtn = document.getElementById("toggle-correct");
-    const prevBtn = document.getElementById("prev");
-    const nextBtn = document.getElementById("next");
+const questionNumberEl = document.getElementById("question-number");
+const questionTextEl = document.getElementById("question-text");
+const answersEl = document.getElementById("answers");
+const questionImageEl = document.getElementById("question-image");
+const progressTextEl = document.getElementById("progress-text");
 
-function loadQuestion(index) {
-    fetch(`quiz.php?index=${index}&category=${category}${showCorrectOnly ? "&show_correct=1" : ""}`)
-        .then(response => response.json())
-        .then(data => {
-            console.log("Loaded question:", data); // Debugging line
-            if (data.error) {
-                questionText.innerText = "No questions available.";
-                questionImage.src = "";
-                optionsContainer.innerHTML = "";
-                return;
-            }
+const prevBtn = document.getElementById("prev");
+const nextBtn = document.getElementById("next");
+const toggleBtn = document.getElementById("toggle-correct");
 
-            questionText.innerText = data.question;
-            questionImage.src = data.image ? data.image : "default.jpg"; // Fallback for missing image
-            optionsContainer.innerHTML = "";
+async function loadData() {
+  const [questionsRes, selectedRes] = await Promise.all([
+    fetch("questions.json"),
+    fetch("selected-questions.json")
+  ]);
 
-            data.options.forEach(option => {
-                if (!option) return; // Skip null options
-                let optionElement = document.createElement("div");
-                optionElement.innerText = option.text;
-                if (option.correct) {
-                    optionElement.classList.add("correct");
-                }
-                optionsContainer.appendChild(optionElement);
-            });
-        })
-        .catch(error => console.error("Error loading question:", error));
+  const questionsData = await questionsRes.json();
+  const selectedIds = (await selectedRes.json()).map(String);
+
+  allQuestions = questionsData.filter(q => selectedIds.includes(q.question_number));
+  renderQuestion();
 }
 
-    categoryDropdown.addEventListener("change", function () {
-        category = this.value;
-        currentIndex = 0;
-        loadQuestion(currentIndex);
-    });
+function renderQuestion() {
+  const q = allQuestions[currentIndex];
+  if (!q) return;
 
-    toggleCorrectBtn.addEventListener("click", function () {
-        showCorrectOnly = !showCorrectOnly;
-        loadQuestion(currentIndex);
-    });
+  const imagePath = q.image ? q.image.replace(/\\/g, "/") : "images/default.png";
+  questionImageEl.src = imagePath;
+  questionImageEl.onerror = () => {
+    questionImageEl.src = "images/default.png";
+  };
 
-    prevBtn.addEventListener("click", function () {
-        if (currentIndex > 0) {
-            currentIndex--;
-            loadQuestion(currentIndex);
-        }
-    });
+  questionNumberEl.textContent = `Frage ${q.question_number}`;
+  questionTextEl.textContent = q.question;
 
-    nextBtn.addEventListener("click", function () {
-        currentIndex++;
-        loadQuestion(currentIndex);
-    });
+  const options = onlyCorrect ? q.options.filter(o => o.correct) : q.options;
 
-    loadQuestion(currentIndex);
+  answersEl.innerHTML = "";
+  options.forEach(opt => {
+    const div = document.createElement("div");
+    div.className = `answer${opt.correct ? " correct" : ""}`;
+    div.textContent = opt.text;
+    answersEl.appendChild(div);
+  });
+
+  const category = q.categories?.[0] || "Unbekannte Kategorie";
+  progressTextEl.textContent = `${currentIndex + 1} / ${allQuestions.length} Fragen, Kategorie: ${category}`;
+
+  prevBtn.disabled = currentIndex === 0;
+  nextBtn.disabled = currentIndex === allQuestions.length - 1;
+
+  toggleBtn.textContent = onlyCorrect ? "Alle Antworten anzeigen" : "Nur richtige Antworten anzeigen";
+}
+
+// Event Listeners
+prevBtn.addEventListener("click", () => {
+  if (currentIndex > 0) {
+    currentIndex--;
+    renderQuestion();
+  }
 });
+
+nextBtn.addEventListener("click", () => {
+  if (currentIndex < allQuestions.length - 1) {
+    currentIndex++;
+    renderQuestion();
+  }
+});
+
+toggleBtn.addEventListener("click", () => {
+  onlyCorrect = !onlyCorrect;
+  renderQuestion();
+});
+
+// Start
+loadData();
