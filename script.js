@@ -11,32 +11,34 @@ document.addEventListener("DOMContentLoaded", function () {
     const prevBtn = document.getElementById("prev");
     const nextBtn = document.getElementById("next");
 
-    function loadQuestion(index) {
-        fetch(`quiz.php?index=${index}&category=${category}${showCorrectOnly ? "&show_correct=1" : ""}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    questionText.innerText = "No questions available.";
-                    questionImage.src = "";
-                    optionsContainer.innerHTML = "";
-                    return;
-                }
-
-                questionText.innerText = data.question;
-                questionImage.src = data.image;
+function loadQuestion(index) {
+    fetch(`quiz.php?index=${index}&category=${category}${showCorrectOnly ? "&show_correct=1" : ""}`)
+        .then(response => response.json())
+        .then(data => {
+            console.log("Loaded question:", data); // Debugging line
+            if (data.error) {
+                questionText.innerText = "No questions available.";
+                questionImage.src = "";
                 optionsContainer.innerHTML = "";
+                return;
+            }
 
-                data.options.forEach(option => {
-                    let optionElement = document.createElement("div");
-                    optionElement.innerText = option.text;
-                    if (option.correct) {
-                        optionElement.classList.add("correct");
-                    }
-                    optionsContainer.appendChild(optionElement);
-                });
-            })
-            .catch(error => console.error("Error loading question:", error));
-    }
+            questionText.innerText = data.question;
+            questionImage.src = data.image ? data.image : "default.jpg"; // Fallback for missing image
+            optionsContainer.innerHTML = "";
+
+            data.options.forEach(option => {
+                if (!option) return; // Skip null options
+                let optionElement = document.createElement("div");
+                optionElement.innerText = option.text;
+                if (option.correct) {
+                    optionElement.classList.add("correct");
+                }
+                optionsContainer.appendChild(optionElement);
+            });
+        })
+        .catch(error => console.error("Error loading question:", error));
+}
 
     categoryDropdown.addEventListener("change", function () {
         category = this.value;
