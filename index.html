@@ -1,75 +1,35 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz App</title>
+    <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-    <div class="progress-bar">
-        <span id="progress-text">0 / 52 Fragen, Kategorie</span>
-    </div>
-    
-    <div class="category-filter">
-        <label for="category-select">Kategorie:</label>
-		
-        <select id="category-select">
-            <option value="all">Alle Kategorien</option>
-			<option value="gw1a">GW-1a - Gefahrenzeichen</option>
-			<option value="gw1b">GW-1b - Verbotszeichen</option>
-			<option value="gw1c">GW-1c - Gebotszeichen, Vorrangzeichen</option>
-			<option value="gw1d">GW-1d - Hinweiszeichen"</option>
-			<option value="gw2">GW-2 - Vorrang</option>
-			<option value="gw3">GW-3 - Partnerkunde</option>
-			<option value="gw4">GW-4 - Fahrtauglichkeit, Gefahrenlehre</option>
-			<option value="gw5">GW-5 - Allgemeine Fahrordnung, Tunnel</option>
-			<option value="gw6">Besondere Verkehrsräume</option>
-			<option value="gw7">GW-7 - Wahl der Fahrgeschwindigkeit</option>
-			<option value="gw8">GW-8 - Halten, Parken / Umkehren, Linkszufahren</option>
-			<option value="gw9">GW-9 - Fahrgeschwindigkeit und Sichtweite</option>
-			<option value="gw10">GW-10 - Überholen</option>
-			<option value="gw11">GW-11 - Bewegen im Verkehr</option>
-			<option value="gw12">GW-12 - Lenkerpflichten, Vormerkungen, Unfall</option>
-			<option value="gw13">GW-13 - Eisenbahnkreuzungen</option>
-			<option value="gw14">GW-14 - Geregelte Kreuzungen</option>
-			<option value="b1">B1 - Rechtsvorschriften</option>
-			<option value="b2">B2 - Personenbeförderung, Ladung, Anhänger</option>
-			<option value="b3">B3 - Fahrzeugtechnik, Winterbetrieb</option>
-			<option value="b4">B4 - Gefahrenlehre, Antriebe, Pannen</option>
-			<option value="b5">B5 - Fahrdynamik, Bremsanlage</option>
-			<option value="slct">Selected Questions</option>				
-        </select>
-		
-    </div>
-    
-    <div class="container">
 
-        <div class="image-section">
-            <img id="question-image" src="images/default.png" alt="Frage Bild">
-        </div>
-		
-		<div class="question-section">
-            <h2 id="question-number">Frage XY</h2>
-            <p id="question-text">Was wird mit diesem Verkehrszeichen angezeigt?</p>
-        </div>
-		
-    </div>
-    
-    <div class="answers-section">
-        <div id="answers"></div>
-		<div class="answer correct">Ich achte besonders darauf, ob Fußgänger den Schutzweg überqueren wollen</div>
-		<div class="answer">Ich darf ab sofort nicht mehr halten oder parken</div>
-	 </div>
-	 
-    <div class="navigation">
-        <button id="prev">Zurück</button>
-        <button id="next">Weiter</button>
-    </div>
-	
-	<div class="navigation">
-		<button id="toggle-correct">Nur richtige Antworten anzeigen</button>
+    <h1>Quiz App</h1>
+
+    <!-- Category Filter -->
+    <label for="category-filter">Choose Category:</label>
+    <select id="category-filter">
+        <option value="all">All</option>
+        <option value="slct">Selected Questions</option>
+        <!-- Dynamic categories from JSON will be added via JavaScript -->
+    </select>
+
+    <!-- Question Section -->
+    <div id="question-container">
+        <p id="question-text">Loading...</p>
+        <img id="question-image" src="" alt="Question Image">
+        <div id="options-container"></div>
     </div>
 
-</div>
-</div>
+    <!-- Controls -->
+    <button id="prev">Previous</button>
+    <button id="next">Next</button>
+    <button id="toggle-correct">Show Only Correct Answers</button>
+
+    <script src="script.js"></script>
 </body>
 </html>
